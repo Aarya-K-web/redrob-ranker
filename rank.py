@@ -39,9 +39,10 @@ def calculate_final_score(row):
         row["location_score"]      * 0.20
     )
 
-    score = score * row["consulting_penalty"]
-    return round(score, 4)
+    # Apply all penalties as multipliers
+    score = score * row["consulting_penalty"] * row["title_penalty"]
 
+    return round(score, 4)
 print("Calculating final scores...")
 features_df["final_score"] = features_df.apply(calculate_final_score, axis=1)
 

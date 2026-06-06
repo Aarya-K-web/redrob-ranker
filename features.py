@@ -42,6 +42,26 @@ def build_text_blob(candidate):
 
     return " ".join(parts)
 
+# Titles that are completely wrong for this role
+UNRELATED_TITLES = [
+    "hr manager", "human resources", "accountant", "civil engineer",
+    "mechanical engineer", "marketing manager", "sales manager",
+    "operations manager", "customer support", "business analyst",
+    "product manager", "project manager", "finance manager",
+    "teacher", "content writer", "graphic designer", "recruiter",
+    "data entry", "office manager", "administrative"
+]
+
+def get_title_penalty(title):
+    """
+    Returns a multiplier based on current job title.
+    Wrong titles get heavily penalized even if they have some AI skills.
+    """
+    title_lower = title.lower()
+    for bad_title in UNRELATED_TITLES:
+        if bad_title in title_lower:
+            return 0.1  # 90% penalty — almost certainly wrong person
+    return 1.0
 
 def extract_features(candidate):
     """
@@ -127,7 +147,9 @@ def extract_features(candidate):
     experience_gap = stated_months - total_career_months
     
     is_honeypot = (expert_zero_months >= 4) or (experience_gap > 36)
-    
+
+    title_penalty = get_title_penalty(p["current_title"])
+
     return {
         "candidate_id": candidate["candidate_id"],
         "text_blob": build_text_blob(candidate),
@@ -135,6 +157,7 @@ def extract_features(candidate):
         "exp_score": exp_score,
         "engagement_score": engagement_score,
         "consulting_penalty": consulting_penalty,
+        "title_penalty": title_penalty,
         "is_honeypot": is_honeypot,
         "yoe": yoe,
         "notice_days": notice,
