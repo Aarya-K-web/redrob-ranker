@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redrob Candidate Ranking Engine</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f0f13;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    header {
+      background: #16161d;
+      border-bottom: 1px solid #2d2d3d;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    header h1 { font-size: 18px; font-weight: 600; color: #f1f5f9; }
+    header p { font-size: 12px; color: #64748b; margin-top: 1px; }
+    .status-dot {
+      margin-left: auto;
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: #64748b;
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 6px #22c55e;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.5; }
+    }
+
+    /* Main layout */
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    /* Panel */
+    .panel {
+      background: #16161d;
+      border: 1px solid #2d2d3d;
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    .panel h2 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+    }
+
+    /* Form elements */
+    textarea {
+      width: 100%;
+      background: #0f0f13;
+      border: 1px solid #2d2d3d;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 13px;
+      line-height: 1.6;
+      padding: 12px;
+      resize: vertical;
+      min-height: 180px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: #6366f1;
+    }
+
+    .label {
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    /* Sliders */
+    .slider-group { margin-top: 1rem; }
+    .slider-row {
+      display: flex; align-items: center;
+      gap: 10px; margin-bottom: 10px;
+    }
+    .slider-label {
+      font-size: 12px; color: #94a3b8;
+      min-width: 120px;
+    }
+    input[type="range"] {
+      flex: 1;
+      accent-color: #6366f1;
+      cursor: pointer;
+    }
+    .slider-val {
+      font-size: 12px;
+      color: #6366f1;
+      min-width: 32px;
+      text-align: right;
+      font-weight: 600;
+    }
+
+    .top-n-row {
+      display: flex; align-items: center;
+      gap: 10px; margin-top: 1rem;
+    }
+    select {
+      background: #0f0f13;
+      border: 1px solid #2d2d3d;
+      border-radius: 6px;
+      color: #e2e8f0;
+      padding: 6px 10px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    /* Button */
+    button#rankBtn {
+      width: 100%;
+      margin-top: 1.25rem;
+      padding: 12px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    button#rankBtn:hover { opacity: 0.9; }
+    button#rankBtn:active { transform: scale(0.98); }
+    button#rankBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Stats bar */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat {
+      background: #16161d;
+      border: 1px solid #2d2d3d;
+      border-radius: 10px;
+      padding: 1rem;
+      text-align: center;
+    }
+    .stat-val {
+      font-size: 24px;
+      font-weight: 700;
+      color: #6366f1;
+    }
+    .stat-label {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    /* Results */
+    .results-area { }
+
+    .candidate-card {
+      background: #16161d;
+      border: 1px solid #2d2d3d;
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.1s;
+    }
+    .candidate-card:hover {
+      border-color: #6366f1;
+      transform: translateX(2px);
+    }
+    .candidate-card.expanded {
+      border-color: #6366f1;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .rank-badge {
+      min-width: 36px; height: 36px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: white;
+      flex-shrink: 0;
+    }
+    .rank-badge.gold { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .rank-badge.silver { background: linear-gradient(135deg, #94a3b8, #64748b); }
+    .rank-badge.bronze { background: linear-gradient(135deg, #b45309, #92400e); }
+
+    .card-info { flex: 1; min-width: 0; }
+    .card-title {
+      font-size: 14px; font-weight: 600; color: #f1f5f9;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .card-sub {
+      font-size: 12px; color: #64748b; margin-top: 2px;
+    }
+
+    .score-pill {
+      background: #1e1e2e;
+      border: 1px solid #2d2d3d;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #6366f1;
+      flex-shrink: 0;
+    }
+
+    /* Score bar */
+    .score-bar-wrap {
+      margin-top: 10px;
+      height: 4px;
+      background: #2d2d3d;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .score-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+      border-radius: 2px;
+      transition: width 0.6s ease;
+    }
+
+    /* Tags */
+    .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+    .tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      border: 1px solid #2d2d3d;
+      color: #94a3b8;
+    }
+    .tag.skill { border-color: #4f46e5; color: #818cf8; }
+    .tag.good { border-color: #16a34a; color: #4ade80; }
+    .tag.warn { border-color: #b45309; color: #fbbf24; }
+
+    /* Expanded details */
+    .card-details {
+      display: none;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #2d2d3d;
+    }
+    .card-details.show { display: block; }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 1rem;
+    }
+    .detail-box {
+      background: #0f0f13;
+      border-radius: 6px;
+      padding: 8px;
+      text-align: center;
+    }
+    .detail-val {
+      font-size: 16px; font-weight: 700; color: #e2e8f0;
+    }
+    .detail-label {
+      font-size: 10px; color: #64748b; margin-top: 2px;
+    }
+
+    .reasoning-box {
+      background: #0f0f13;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.7;
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 3rem;
+      color: #64748b;
+    }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid #2d2d3d;
+      border-top-color: #6366f1;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Empty state */
+    .empty {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: #64748b;
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 1rem; }
+    .empty h3 { color: #94a3b8; margin-bottom: 0.5rem; }
+
+    @media (max-width: 768px) {
+      main { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🎯</div>
+  <div>
+    <h1>Redrob Candidate Ranking Engine</h1>
+    <p>Hybrid semantic + rule-based AI ranking · 100,000 candidates</p>
+  </div>
+  <div class="status-dot">
+    <div class="dot"></div>
+    <span id="statusText">Connecting...</span>
+  </div>
+</header>
+
+<main>
+  <!-- Left panel: controls -->
+  <div>
+    <div class="panel">
+      <h2>Job Description</h2>
+      <span class="label">Paste the full JD or describe the ideal candidate</span>
+      <textarea id="jdInput" placeholder="Senior AI Engineer with experience in semantic search, vector databases, and ranking systems...">Senior AI Engineer with 5-9 years experience building embedding-based retrieval systems, vector databases like Pinecone, FAISS, Weaviate, and ranking or recommendation engines at product companies in India. Strong Python. Production ML experience required. Not a consulting-only background.</textarea>
+
+      <div class="slider-group">
+        <h2 style="margin-top:1rem">Scoring Weights</h2>
+        <div class="slider-row">
+          <span class="slider-label">Semantic match</span>
+          <input type="range" id="wSemantic" min="0" max="1" step="0.05" value="0.4"
+            oninput="document.getElementById('vSemantic').textContent=parseFloat(this.value).toFixed(2)">
+          <span class="slider-val" id="vSemantic">0.40</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">Experience fit</span>
+          <input type="range" id="wExp" min="0" max="1" step="0.05" value="0.2"
+            oninput="document.getElementById('vExp').textContent=parseFloat(this.value).toFixed(2)">
+          <span class="slider-val" id="vExp">0.20</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">Engagement</span>
+          <input type="range" id="wEngage" min="0" max="1" step="0.05" value="0.2"
+            oninput="document.getElementById('vEngage').textContent=parseFloat(this.value).toFixed(2)">
+          <span class="slider-val" id="vEngage">0.20</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">Location fit</span>
+          <input type="range" id="wLocation" min="0" max="1" step="0.05" value="0.2"
+            oninput="document.getElementById('vLocation').textContent=parseFloat(this.value).toFixed(2)">
+          <span class="slider-val" id="vLocation">0.20</span>
+        </div>
+      </div>
+
+      <div class="top-n-row">
+        <span class="label" style="margin:0">Show top</span>
+        <select id="topN">
+          <option value="10">10 candidates</option>
+          <option value="20" selected>20 candidates</option>
+          <option value="50">50 candidates</option>
+          <option value="100">100 candidates</option>
+        </select>
+      </div>
+
+      <button id="rankBtn" onclick="rankCandidates()">
+        🚀 Rank Candidates
+      </button>
+    </div>
+  </div>
+
+  <!-- Right panel: results -->
+  <div>
+    <div id="statsBar" style="display:none" class="stats-bar">
+      <div class="stat">
+        <div class="stat-val" id="statSearched">-</div>
+        <div class="stat-label">Candidates Searched</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" id="statRemoved">-</div>
+        <div class="stat-label">Honeypots Removed</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" id="statTop">-</div>
+        <div class="stat-label">Top Score</div>
+      </div>
+    </div>
+
+    <div id="resultsArea">
+      <div class="empty">
+        <div class="empty-icon">🔍</div>
+        <h3>Ready to rank</h3>
+        <p>Paste a job description and click Rank Candidates</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  const API = 'http://localhost:8000';
+
+  // Check API health on load
+  fetch(`${API}/health`)
+    .then(r => r.json())
+    .then(d => {
+      document.getElementById('statusText').textContent =
+        `API live · ${d.candidates.toLocaleString()} candidates`;
+    })
+    .catch(() => {
+      document.getElementById('statusText').textContent = 'API offline';
+      document.querySelector('.dot').style.background = '#ef4444';
+      document.querySelector('.dot').style.boxShadow = '0 0 6px #ef4444';
+    });
+
+  async function rankCandidates() {
+    const jd = document.getElementById('jdInput').value.trim();
+    if (!jd) { alert('Please enter a job description'); return; }
+
+    const btn = document.getElementById('rankBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Ranking...';
+
+    document.getElementById('resultsArea').innerHTML = `
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Searching 100,000 candidates...</p>
+      </div>`;
+    document.getElementById('statsBar').style.display = 'none';
+
+    try {
+      const res = await fetch(`${API}/rank`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          job_description: jd,
+          top_n: parseInt(document.getElementById('topN').value),
+          weight_semantic: parseFloat(document.getElementById('wSemantic').value),
+          weight_experience: parseFloat(document.getElementById('wExp').value),
+          weight_engagement: parseFloat(document.getElementById('wEngage').value),
+          weight_location: parseFloat(document.getElementById('wLocation').value),
+        })
+      });
+
+      const data = await res.json();
+      renderResults(data);
+
+    } catch (e) {
+      document.getElementById('resultsArea').innerHTML = `
+        <div class="empty">
+          <div class="empty-icon">❌</div>
+          <h3>API Error</h3>
+          <p>Make sure the API server is running on port 8000</p>
+        </div>`;
+    }
+
+    btn.disabled = false;
+    btn.textContent = '🚀 Rank Candidates';
+  }
+
+  function renderResults(data) {
+    // Stats
+    const results = data.results;
+    document.getElementById('statsBar').style.display = 'grid';
+    document.getElementById('statSearched').textContent =
+      data.total_searched.toLocaleString();
+    document.getElementById('statRemoved').textContent =
+      data.honeypots_removed;
+    document.getElementById('statTop').textContent =
+      results.length ? results[0].score.toFixed(4) : '-';
+
+    if (!results.length) {
+      document.getElementById('resultsArea').innerHTML = `
+        <div class="empty"><h3>No results found</h3></div>`;
+      return;
+    }
+
+    let html = '';
+    results.forEach((c, i) => {
+      const badgeClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+      const barWidth = (c.score * 100).toFixed(1);
+
+      const skillTags = c.retrieval_skills.slice(0, 5).map(s =>
+        `<span class="tag skill">${s}</span>`).join('');
+
+      const openTag = c.open_to_work
+        ? `<span class="tag good">Open to work</span>` : '';
+      const noticeTag = c.notice_days <= 30
+        ? `<span class="tag good">Quick joiner</span>`
+        : c.notice_days > 90
+        ? `<span class="tag warn">${c.notice_days}d notice</span>` : '';
+
+      html += `
+        <div class="candidate-card" id="card-${i}" onclick="toggleCard(${i})">
+          <div class="card-header">
+            <div class="rank-badge ${badgeClass}">#${c.rank}</div>
+            <div class="card-info">
+              <div class="card-title">${c.title} · ${c.company}</div>
+              <div class="card-sub">${c.industry} · ${c.years_of_experience.toFixed(1)} yrs · ${c.country}</div>
+            </div>
+            <div class="score-pill">${c.score.toFixed(4)}</div>
+          </div>
+          <div class="score-bar-wrap">
+            <div class="score-bar-fill" style="width:${barWidth}%"></div>
+          </div>
+          <div class="tags">
+            ${skillTags}${openTag}${noticeTag}
+          </div>
+          <div class="card-details" id="details-${i}">
+            <div class="detail-grid">
+              <div class="detail-box">
+                <div class="detail-val">${c.years_of_experience.toFixed(1)}</div>
+                <div class="detail-label">Years Exp</div>
+              </div>
+              <div class="detail-box">
+                <div class="detail-val">${c.notice_days}</div>
+                <div class="detail-label">Notice Days</div>
+              </div>
+              <div class="detail-box">
+                <div class="detail-val">${c.open_to_work ? '✅' : '❌'}</div>
+                <div class="detail-label">Open to Work</div>
+              </div>
+              <div class="detail-box">
+                <div class="detail-val">${c.retrieval_skills.length}</div>
+                <div class="detail-label">Retrieval Skills</div>
+              </div>
+            </div>
+            <div class="reasoning-box">${c.reasoning}</div>
+          </div>
+        </div>`;
+    });
+
+    document.getElementById('resultsArea').innerHTML = html;
+  }
+
+  function toggleCard(i) {
+    const details = document.getElementById(`details-${i}`);
+    const card = document.getElementById(`card-${i}`);
+    details.classList.toggle('show');
+    card.classList.toggle('expanded');
+  }
+</script>
+</body>
+</html>
