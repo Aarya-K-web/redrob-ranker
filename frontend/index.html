@@ -3,459 +3,891 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Redrob Candidate Ranking Engine</title>
+  <title>Redrob · Candidate Intelligence Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #080810;
+      --bg2: #0d0d1a;
+      --bg3: #12121f;
+      --border: rgba(255,255,255,0.06);
+      --border-bright: rgba(255,255,255,0.12);
+      --accent: #7c6dfa;
+      --accent2: #fa6d8f;
+      --accent3: #6dfacc;
+      --text: #f0f0ff;
+      --text2: #8888aa;
+      --text3: #4a4a6a;
+      --gold: #fbbf24;
+      --silver: #94a3b8;
+      --bronze: #b45309;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #0f0f13;
-      color: #e2e8f0;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(124,109,250,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(124,109,250,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Glow orbs */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      z-index: 0;
+      animation: orbFloat 8s ease-in-out infinite;
+    }
+    .orb1 {
+      width: 500px; height: 500px;
+      background: rgba(124,109,250,0.08);
+      top: -200px; left: -100px;
+    }
+    .orb2 {
+      width: 400px; height: 400px;
+      background: rgba(250,109,143,0.06);
+      bottom: -150px; right: -100px;
+      animation-delay: -4s;
+    }
+    .orb3 {
+      width: 300px; height: 300px;
+      background: rgba(109,250,204,0.05);
+      top: 40%; left: 60%;
+      animation-delay: -2s;
+    }
+    @keyframes orbFloat {
+      0%,100% { transform: translate(0,0) scale(1); }
+      50% { transform: translate(20px,-20px) scale(1.05); }
     }
 
     /* Header */
     header {
-      background: #16161d;
-      border-bottom: 1px solid #2d2d3d;
-      padding: 1rem 2rem;
+      position: relative;
+      z-index: 10;
       display: flex;
       align-items: center;
-      gap: 12px;
+      justify-content: space-between;
+      padding: 1.25rem 2.5rem;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      background: rgba(8,8,16,0.8);
+      position: sticky;
+      top: 0;
     }
-    .logo {
-      width: 36px; height: 36px;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      border-radius: 8px;
+
+    .logo-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-mark {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
       font-size: 18px;
+      position: relative;
+      overflow: hidden;
     }
-    header h1 { font-size: 18px; font-weight: 600; color: #f1f5f9; }
-    header p { font-size: 12px; color: #64748b; margin-top: 1px; }
-    .status-dot {
-      margin-left: auto;
-      display: flex; align-items: center; gap: 6px;
-      font-size: 12px; color: #64748b;
-    }
-    .dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: #22c55e;
-      box-shadow: 0 0 6px #22c55e;
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; } 50% { opacity: 0.5; }
+    .logo-mark::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
     }
 
-    /* Main layout */
-    main {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 2rem;
-      display: grid;
-      grid-template-columns: 380px 1fr;
-      gap: 1.5rem;
-      align-items: start;
+    .logo-text {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 17px;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    .logo-text span {
+      color: var(--accent);
     }
 
-    /* Panel */
-    .panel {
-      background: #16161d;
-      border: 1px solid #2d2d3d;
-      border-radius: 12px;
-      padding: 1.5rem;
-    }
-    .panel h2 {
-      font-size: 14px;
-      font-weight: 600;
-      color: #94a3b8;
+    .header-center {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text3);
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 1rem;
     }
 
-    /* Form elements */
+    .api-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text2);
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 14px;
+    }
+    .status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent3);
+      box-shadow: 0 0 8px var(--accent3);
+      animation: blink 2s infinite;
+    }
+    .status-dot.offline { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); }
+    @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+    /* Layout */
+    .app {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 0;
+      min-height: calc(100vh - 69px);
+    }
+
+    /* Left sidebar */
+    .sidebar {
+      border-right: 1px solid var(--border);
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      position: sticky;
+      top: 69px;
+      height: calc(100vh - 69px);
+      overflow-y: auto;
+    }
+
+    .sidebar::-webkit-scrollbar { width: 0; }
+
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-bottom: 10px;
+    }
+
     textarea {
       width: 100%;
-      background: #0f0f13;
-      border: 1px solid #2d2d3d;
-      border-radius: 8px;
-      color: #e2e8f0;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
       font-size: 13px;
-      line-height: 1.6;
-      padding: 12px;
-      resize: vertical;
-      min-height: 180px;
-      font-family: inherit;
-      transition: border-color 0.2s;
+      line-height: 1.7;
+      padding: 14px;
+      resize: none;
+      height: 200px;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
     textarea:focus {
       outline: none;
-      border-color: #6366f1;
+      border-color: rgba(124,109,250,0.4);
+      box-shadow: 0 0 0 3px rgba(124,109,250,0.08);
     }
 
-    .label {
-      font-size: 12px;
-      color: #64748b;
-      margin-bottom: 6px;
-      display: block;
-    }
-
-    /* Sliders */
-    .slider-group { margin-top: 1rem; }
-    .slider-row {
-      display: flex; align-items: center;
-      gap: 10px; margin-bottom: 10px;
-    }
-    .slider-label {
-      font-size: 12px; color: #94a3b8;
-      min-width: 120px;
-    }
-    input[type="range"] {
-      flex: 1;
-      accent-color: #6366f1;
-      cursor: pointer;
-    }
-    .slider-val {
-      font-size: 12px;
-      color: #6366f1;
-      min-width: 32px;
-      text-align: right;
-      font-weight: 600;
-    }
-
-    .top-n-row {
-      display: flex; align-items: center;
-      gap: 10px; margin-top: 1rem;
-    }
-    select {
-      background: #0f0f13;
-      border: 1px solid #2d2d3d;
-      border-radius: 6px;
-      color: #e2e8f0;
-      padding: 6px 10px;
-      font-size: 13px;
-      cursor: pointer;
-    }
-
-    /* Button */
-    button#rankBtn {
-      width: 100%;
-      margin-top: 1.25rem;
-      padding: 12px;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      border: none;
-      border-radius: 8px;
-      color: white;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity 0.2s, transform 0.1s;
-    }
-    button#rankBtn:hover { opacity: 0.9; }
-    button#rankBtn:active { transform: scale(0.98); }
-    button#rankBtn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    /* Stats bar */
-    .stats-bar {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    .stat {
-      background: #16161d;
-      border: 1px solid #2d2d3d;
-      border-radius: 10px;
-      padding: 1rem;
-      text-align: center;
-    }
-    .stat-val {
-      font-size: 24px;
-      font-weight: 700;
-      color: #6366f1;
-    }
-    .stat-label {
-      font-size: 11px;
-      color: #64748b;
-      margin-top: 2px;
-    }
-
-    /* Results */
-    .results-area { }
-
-    .candidate-card {
-      background: #16161d;
-      border: 1px solid #2d2d3d;
-      border-radius: 10px;
-      padding: 1.25rem;
-      margin-bottom: 10px;
-      cursor: pointer;
-      transition: border-color 0.2s, transform 0.1s;
-    }
-    .candidate-card:hover {
-      border-color: #6366f1;
-      transform: translateX(2px);
-    }
-    .candidate-card.expanded {
-      border-color: #6366f1;
-    }
-
-    .card-header {
+    /* Weight sliders */
+    .weights-grid {
       display: flex;
-      align-items: center;
+      flex-direction: column;
       gap: 12px;
     }
-    .rank-badge {
-      min-width: 36px; height: 36px;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      border-radius: 8px;
+
+    .weight-row {
+      display: grid;
+      grid-template-columns: 130px 1fr 44px;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .weight-name {
+      font-size: 12px;
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .weight-icon {
+      width: 18px; height: 18px;
+      border-radius: 4px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 13px; font-weight: 700; color: white;
-      flex-shrink: 0;
+      font-size: 10px;
     }
-    .rank-badge.gold { background: linear-gradient(135deg, #f59e0b, #d97706); }
-    .rank-badge.silver { background: linear-gradient(135deg, #94a3b8, #64748b); }
-    .rank-badge.bronze { background: linear-gradient(135deg, #b45309, #92400e); }
+    .wi-semantic { background: rgba(124,109,250,0.15); }
+    .wi-exp { background: rgba(250,109,143,0.15); }
+    .wi-engage { background: rgba(109,250,204,0.15); }
+    .wi-loc { background: rgba(251,191,36,0.15); }
 
-    .card-info { flex: 1; min-width: 0; }
-    .card-title {
-      font-size: 14px; font-weight: 600; color: #f1f5f9;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .card-sub {
-      font-size: 12px; color: #64748b; margin-top: 2px;
-    }
-
-    .score-pill {
-      background: #1e1e2e;
-      border: 1px solid #2d2d3d;
-      border-radius: 20px;
-      padding: 4px 12px;
-      font-size: 13px;
-      font-weight: 700;
-      color: #6366f1;
-      flex-shrink: 0;
-    }
-
-    /* Score bar */
-    .score-bar-wrap {
-      margin-top: 10px;
+    input[type="range"] {
+      -webkit-appearance: none;
       height: 4px;
-      background: #2d2d3d;
+      border-radius: 2px;
+      background: var(--bg3);
+      cursor: pointer;
+      position: relative;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px rgba(124,109,250,0.5);
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .weight-val {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--accent);
+      text-align: right;
+    }
+
+    /* Top N selector */
+    .topn-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .topn-label {
+      font-size: 12px;
+      color: var(--text2);
+    }
+
+    .topn-options {
+      display: flex;
+      gap: 6px;
+    }
+    .topn-btn {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text3);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .topn-btn.active, .topn-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(124,109,250,0.08);
+    }
+
+    /* Rank button */
+    .rank-btn {
+      position: relative;
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), #a855f7);
+      color: white;
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      overflow: hidden;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .rank-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+    }
+    .rank-btn::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      z-index: -1;
+      filter: blur(8px);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .rank-btn:hover::after { opacity: 0.6; }
+    .rank-btn:hover { transform: translateY(-1px); }
+    .rank-btn:active { transform: scale(0.98); }
+    .rank-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* Main content area */
+    .content {
+      padding: 2rem 2.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* Stats row */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+
+    .stat-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .stat-card.live::before { opacity: 1; }
+
+    .stat-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .stat-num.accent { color: var(--accent); }
+    .stat-num.green { color: var(--accent3); }
+    .stat-num.red { color: var(--accent2); }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-family: 'DM Mono', monospace;
+    }
+
+    /* Empty state */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 400px;
+      gap: 1rem;
+      color: var(--text3);
+    }
+
+    .empty-icon {
+      width: 80px; height: 80px;
+      border-radius: 20px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px;
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .empty-state h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      color: var(--text2);
+    }
+    .empty-state p { font-size: 13px; }
+
+    /* Loading */
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 400px;
+      gap: 1.5rem;
+    }
+
+    .loader-ring {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-right-color: var(--accent2);
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--text2);
+    }
+
+    .loading-dots span {
+      animation: dotBlink 1.4s infinite;
+      opacity: 0;
+    }
+    .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes dotBlink { 0%,80%,100% { opacity:0; } 40% { opacity:1; } }
+
+    /* Candidate cards */
+    .candidates-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .cand-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+      animation: slideIn 0.4s ease both;
+    }
+
+    @keyframes slideIn {
+      from { opacity:0; transform: translateY(12px); }
+      to { opacity:1; transform: translateY(0); }
+    }
+
+    .cand-card:hover {
+      border-color: var(--border-bright);
+      transform: translateX(3px);
+      box-shadow: -3px 0 0 var(--accent), 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .cand-card.open {
+      border-color: rgba(124,109,250,0.3);
+      box-shadow: -3px 0 0 var(--accent), 0 4px 30px rgba(124,109,250,0.08);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 1.1rem 1.25rem;
+    }
+
+    .rank-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      min-width: 42px; height: 42px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      letter-spacing: -0.02em;
+    }
+    .rank-num.r1 { background: linear-gradient(135deg,#fbbf24,#f59e0b); color: #000; box-shadow: 0 0 20px rgba(251,191,36,0.3); }
+    .rank-num.r2 { background: linear-gradient(135deg,#94a3b8,#64748b); color: #fff; }
+    .rank-num.r3 { background: linear-gradient(135deg,#cd7c3a,#92400e); color: #fff; }
+    .rank-num.rn { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+
+    .card-main { flex: 1; min-width: 0; }
+
+    .card-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 3px;
+    }
+    .card-meta-text {
+      font-size: 12px;
+      color: var(--text2);
+    }
+    .dot-sep {
+      width: 3px; height: 3px;
+      border-radius: 50%;
+      background: var(--text3);
+    }
+
+    .card-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .score-display {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .score-bar-track {
+      width: 80px;
+      height: 3px;
+      background: var(--bg3);
       border-radius: 2px;
       overflow: hidden;
     }
     .score-bar-fill {
       height: 100%;
-      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
       border-radius: 2px;
-      transition: width 0.6s ease;
+      transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
     }
 
     /* Tags */
-    .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      padding: 0 1.25rem 1rem;
+    }
     .tag {
-      font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 20px;
-      border: 1px solid #2d2d3d;
-      color: #94a3b8;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.04em;
     }
-    .tag.skill { border-color: #4f46e5; color: #818cf8; }
-    .tag.good { border-color: #16a34a; color: #4ade80; }
-    .tag.warn { border-color: #b45309; color: #fbbf24; }
+    .tag-skill { background: rgba(124,109,250,0.1); color: #a78bfa; border: 1px solid rgba(124,109,250,0.2); }
+    .tag-good { background: rgba(109,250,204,0.08); color: #6dfacc; border: 1px solid rgba(109,250,204,0.2); }
+    .tag-warn { background: rgba(251,191,36,0.08); color: #fbbf24; border: 1px solid rgba(251,191,36,0.2); }
 
-    /* Expanded details */
-    .card-details {
+    /* Expanded panel */
+    .card-expand {
       display: none;
-      margin-top: 1rem;
-      padding-top: 1rem;
-      border-top: 1px solid #2d2d3d;
+      border-top: 1px solid var(--border);
+      padding: 1.25rem;
+      background: rgba(0,0,0,0.2);
     }
-    .card-details.show { display: block; }
+    .card-expand.show { display: block; }
 
-    .detail-grid {
+    .expand-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
+      gap: 10px;
       margin-bottom: 1rem;
     }
-    .detail-box {
-      background: #0f0f13;
-      border-radius: 6px;
-      padding: 8px;
-      text-align: center;
-    }
-    .detail-val {
-      font-size: 16px; font-weight: 700; color: #e2e8f0;
-    }
-    .detail-label {
-      font-size: 10px; color: #64748b; margin-top: 2px;
-    }
 
-    .reasoning-box {
-      background: #0f0f13;
+    .expand-box {
+      background: var(--bg3);
+      border: 1px solid var(--border);
       border-radius: 8px;
       padding: 12px;
+      text-align: center;
+    }
+    .expand-val {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .expand-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 4px;
+    }
+
+    /* Score breakdown bars */
+    .breakdown {
+      margin-bottom: 1rem;
+    }
+    .breakdown-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .breakdown-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--text3);
+      min-width: 110px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .breakdown-track {
+      flex: 1;
+      height: 4px;
+      background: var(--bg3);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .breakdown-fill {
+      height: 100%;
+      border-radius: 2px;
+    }
+    .bf-semantic { background: linear-gradient(90deg, var(--accent), #a78bfa); }
+    .bf-exp { background: linear-gradient(90deg, var(--accent2), #f472b6); }
+    .bf-engage { background: linear-gradient(90deg, var(--accent3), #34d399); }
+    .bf-loc { background: linear-gradient(90deg, var(--gold), #f59e0b); }
+
+    .breakdown-num {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--text2);
+      min-width: 32px;
+      text-align: right;
+    }
+
+    /* Reasoning box */
+    .reasoning {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
       font-size: 12px;
-      color: #94a3b8;
-      line-height: 1.7;
+      color: var(--text2);
+      line-height: 1.8;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .reasoning-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
     }
 
-    /* Loading */
-    .loading {
-      text-align: center;
-      padding: 3rem;
-      color: #64748b;
-    }
-    .spinner {
-      width: 32px; height: 32px;
-      border: 3px solid #2d2d3d;
-      border-top-color: #6366f1;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin: 0 auto 1rem;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
 
-    /* Empty state */
-    .empty {
-      text-align: center;
-      padding: 4rem 2rem;
-      color: #64748b;
-    }
-    .empty-icon { font-size: 48px; margin-bottom: 1rem; }
-    .empty h3 { color: #94a3b8; margin-bottom: 0.5rem; }
+    /* Stagger animation delays */
+    .cand-card:nth-child(1) { animation-delay: 0ms; }
+    .cand-card:nth-child(2) { animation-delay: 40ms; }
+    .cand-card:nth-child(3) { animation-delay: 80ms; }
+    .cand-card:nth-child(4) { animation-delay: 120ms; }
+    .cand-card:nth-child(5) { animation-delay: 160ms; }
+    .cand-card:nth-child(6) { animation-delay: 200ms; }
+    .cand-card:nth-child(7) { animation-delay: 240ms; }
+    .cand-card:nth-child(8) { animation-delay: 280ms; }
+    .cand-card:nth-child(9) { animation-delay: 320ms; }
+    .cand-card:nth-child(10) { animation-delay: 360ms; }
 
-    @media (max-width: 768px) {
-      main { grid-template-columns: 1fr; }
+    .divider-line {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border-bright), transparent);
+      margin: 4px 0;
     }
   </style>
 </head>
 <body>
 
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
 <header>
-  <div class="logo">🎯</div>
-  <div>
-    <h1>Redrob Candidate Ranking Engine</h1>
-    <p>Hybrid semantic + rule-based AI ranking · 100,000 candidates</p>
+  <div class="logo-group">
+    <div class="logo-mark">🎯</div>
+    <div>
+      <div class="logo-text">red<span>rob</span> · intelligence</div>
+    </div>
   </div>
-  <div class="status-dot">
-    <div class="dot"></div>
-    <span id="statusText">Connecting...</span>
+  <div class="header-center">Candidate Discovery Engine · India Runs Hackathon</div>
+  <div class="api-status">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">connecting...</span>
   </div>
 </header>
 
-<main>
-  <!-- Left panel: controls -->
-  <div>
-    <div class="panel">
-      <h2>Job Description</h2>
-      <span class="label">Paste the full JD or describe the ideal candidate</span>
-      <textarea id="jdInput" placeholder="Senior AI Engineer with experience in semantic search, vector databases, and ranking systems...">Senior AI Engineer with 5-9 years experience building embedding-based retrieval systems, vector databases like Pinecone, FAISS, Weaviate, and ranking or recommendation engines at product companies in India. Strong Python. Production ML experience required. Not a consulting-only background.</textarea>
+<div class="app">
 
-      <div class="slider-group">
-        <h2 style="margin-top:1rem">Scoring Weights</h2>
-        <div class="slider-row">
-          <span class="slider-label">Semantic match</span>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+
+    <div>
+      <div class="section-label">Job Description</div>
+      <textarea id="jdInput" placeholder="Describe the role or paste the full JD...">Senior AI Engineer with 5-9 years experience building embedding-based retrieval systems, vector databases like Pinecone, FAISS, Weaviate, and ranking or recommendation engines at product companies in India. Strong Python. Production ML experience required. Not a consulting-only background.</textarea>
+    </div>
+
+    <div class="divider-line"></div>
+
+    <div>
+      <div class="section-label">Scoring Weights</div>
+      <div class="weights-grid">
+        <div class="weight-row">
+          <div class="weight-name">
+            <div class="weight-icon wi-semantic">🧠</div>
+            Semantic
+          </div>
           <input type="range" id="wSemantic" min="0" max="1" step="0.05" value="0.4"
             oninput="document.getElementById('vSemantic').textContent=parseFloat(this.value).toFixed(2)">
-          <span class="slider-val" id="vSemantic">0.40</span>
+          <div class="weight-val" id="vSemantic">0.40</div>
         </div>
-        <div class="slider-row">
-          <span class="slider-label">Experience fit</span>
+        <div class="weight-row">
+          <div class="weight-name">
+            <div class="weight-icon wi-exp">📈</div>
+            Experience
+          </div>
           <input type="range" id="wExp" min="0" max="1" step="0.05" value="0.2"
             oninput="document.getElementById('vExp').textContent=parseFloat(this.value).toFixed(2)">
-          <span class="slider-val" id="vExp">0.20</span>
+          <div class="weight-val" id="vExp">0.20</div>
         </div>
-        <div class="slider-row">
-          <span class="slider-label">Engagement</span>
+        <div class="weight-row">
+          <div class="weight-name">
+            <div class="weight-icon wi-engage">⚡</div>
+            Engagement
+          </div>
           <input type="range" id="wEngage" min="0" max="1" step="0.05" value="0.2"
             oninput="document.getElementById('vEngage').textContent=parseFloat(this.value).toFixed(2)">
-          <span class="slider-val" id="vEngage">0.20</span>
+          <div class="weight-val" id="vEngage">0.20</div>
         </div>
-        <div class="slider-row">
-          <span class="slider-label">Location fit</span>
+        <div class="weight-row">
+          <div class="weight-name">
+            <div class="weight-icon wi-loc">📍</div>
+            Location
+          </div>
           <input type="range" id="wLocation" min="0" max="1" step="0.05" value="0.2"
             oninput="document.getElementById('vLocation').textContent=parseFloat(this.value).toFixed(2)">
-          <span class="slider-val" id="vLocation">0.20</span>
+          <div class="weight-val" id="vLocation">0.20</div>
         </div>
       </div>
-
-      <div class="top-n-row">
-        <span class="label" style="margin:0">Show top</span>
-        <select id="topN">
-          <option value="10">10 candidates</option>
-          <option value="20" selected>20 candidates</option>
-          <option value="50">50 candidates</option>
-          <option value="100">100 candidates</option>
-        </select>
-      </div>
-
-      <button id="rankBtn" onclick="rankCandidates()">
-        🚀 Rank Candidates
-      </button>
     </div>
-  </div>
 
-  <!-- Right panel: results -->
-  <div>
-    <div id="statsBar" style="display:none" class="stats-bar">
-      <div class="stat">
-        <div class="stat-val" id="statSearched">-</div>
+    <div class="divider-line"></div>
+
+    <div>
+      <div class="section-label">Shortlist Size</div>
+      <div class="topn-options">
+        <button class="topn-btn" onclick="setTopN(10,this)">10</button>
+        <button class="topn-btn active" onclick="setTopN(20,this)">20</button>
+        <button class="topn-btn" onclick="setTopN(50,this)">50</button>
+        <button class="topn-btn" onclick="setTopN(100,this)">100</button>
+      </div>
+    </div>
+
+    <button class="rank-btn" id="rankBtn" onclick="rankCandidates()">
+      ⚡ &nbsp;Find Best Candidates
+    </button>
+
+  </aside>
+
+  <!-- Main content -->
+  <main class="content">
+
+    <!-- Stats -->
+    <div class="stats-row" id="statsRow">
+      <div class="stat-card" id="sc1">
+        <div class="stat-num" id="statSearched">—</div>
         <div class="stat-label">Candidates Searched</div>
       </div>
-      <div class="stat">
-        <div class="stat-val" id="statRemoved">-</div>
+      <div class="stat-card" id="sc2">
+        <div class="stat-num red" id="statHoney">—</div>
         <div class="stat-label">Honeypots Removed</div>
       </div>
-      <div class="stat">
-        <div class="stat-val" id="statTop">-</div>
-        <div class="stat-label">Top Score</div>
+      <div class="stat-card" id="sc3">
+        <div class="stat-num accent" id="statTop">—</div>
+        <div class="stat-label">Top Match Score</div>
+      </div>
+      <div class="stat-card" id="sc4">
+        <div class="stat-num green" id="statShown">—</div>
+        <div class="stat-label">Candidates Shortlisted</div>
       </div>
     </div>
 
+    <!-- Results -->
     <div id="resultsArea">
-      <div class="empty">
+      <div class="empty-state">
         <div class="empty-icon">🔍</div>
-        <h3>Ready to rank</h3>
-        <p>Paste a job description and click Rank Candidates</p>
+        <h3>Ready to discover talent</h3>
+        <p>Enter a job description and click Find Best Candidates</p>
       </div>
     </div>
-  </div>
-</main>
+
+  </main>
+</div>
 
 <script>
   const API = 'http://localhost:8000';
+  let selectedTopN = 20;
 
-  // Check API health on load
+  function setTopN(n, btn) {
+    selectedTopN = n;
+    document.querySelectorAll('.topn-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  // Check API health
   fetch(`${API}/health`)
     .then(r => r.json())
     .then(d => {
+      document.getElementById('statusDot').classList.remove('offline');
       document.getElementById('statusText').textContent =
         `API live · ${d.candidates.toLocaleString()} candidates`;
+      document.getElementById('statSearched').textContent =
+        d.candidates.toLocaleString();
+      document.getElementById('sc1').classList.add('live');
     })
     .catch(() => {
+      document.getElementById('statusDot').classList.add('offline');
       document.getElementById('statusText').textContent = 'API offline';
-      document.querySelector('.dot').style.background = '#ef4444';
-      document.querySelector('.dot').style.boxShadow = '0 0 6px #ef4444';
     });
 
   async function rankCandidates() {
     const jd = document.getElementById('jdInput').value.trim();
-    if (!jd) { alert('Please enter a job description'); return; }
+    if (!jd) return;
 
     const btn = document.getElementById('rankBtn');
     btn.disabled = true;
-    btn.textContent = '⏳ Ranking...';
+    btn.textContent = '⏳  Searching 100,000 candidates...';
 
     document.getElementById('resultsArea').innerHTML = `
-      <div class="loading">
-        <div class="spinner"></div>
-        <p>Searching 100,000 candidates...</p>
+      <div class="loading-state">
+        <div class="loader-ring"></div>
+        <div class="loading-text">
+          Ranking candidates<span class="loading-dots">
+            <span>.</span><span>.</span><span>.</span>
+          </span>
+        </div>
       </div>`;
-    document.getElementById('statsBar').style.display = 'none';
 
     try {
       const res = await fetch(`${API}/rank`, {
@@ -463,110 +895,143 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           job_description: jd,
-          top_n: parseInt(document.getElementById('topN').value),
+          top_n: selectedTopN,
           weight_semantic: parseFloat(document.getElementById('wSemantic').value),
           weight_experience: parseFloat(document.getElementById('wExp').value),
           weight_engagement: parseFloat(document.getElementById('wEngage').value),
           weight_location: parseFloat(document.getElementById('wLocation').value),
         })
       });
-
       const data = await res.json();
       renderResults(data);
-
-    } catch (e) {
+    } catch(e) {
       document.getElementById('resultsArea').innerHTML = `
-        <div class="empty">
+        <div class="empty-state">
           <div class="empty-icon">❌</div>
-          <h3>API Error</h3>
+          <h3>Connection failed</h3>
           <p>Make sure the API server is running on port 8000</p>
         </div>`;
     }
 
     btn.disabled = false;
-    btn.textContent = '🚀 Rank Candidates';
+    btn.innerHTML = '⚡ &nbsp;Find Best Candidates';
   }
 
   function renderResults(data) {
-    // Stats
     const results = data.results;
-    document.getElementById('statsBar').style.display = 'grid';
+
+    // Update stats
     document.getElementById('statSearched').textContent =
       data.total_searched.toLocaleString();
-    document.getElementById('statRemoved').textContent =
-      data.honeypots_removed;
+    document.getElementById('statHoney').textContent = data.honeypots_removed;
     document.getElementById('statTop').textContent =
-      results.length ? results[0].score.toFixed(4) : '-';
+      results.length ? results[0].score.toFixed(4) : '—';
+    document.getElementById('statShown').textContent = results.length;
+
+    ['sc1','sc2','sc3','sc4'].forEach(id =>
+      document.getElementById(id).classList.add('live'));
 
     if (!results.length) {
-      document.getElementById('resultsArea').innerHTML = `
-        <div class="empty"><h3>No results found</h3></div>`;
+      document.getElementById('resultsArea').innerHTML =
+        `<div class="empty-state"><h3>No results found</h3></div>`;
       return;
     }
 
-    let html = '';
+    let html = '<div class="candidates-list">';
     results.forEach((c, i) => {
-      const badgeClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
-      const barWidth = (c.score * 100).toFixed(1);
+      const rankClass = i===0?'r1':i===1?'r2':i===2?'r3':'rn';
+      const barW = (c.score * 100).toFixed(1);
 
-      const skillTags = c.retrieval_skills.slice(0, 5).map(s =>
-        `<span class="tag skill">${s}</span>`).join('');
-
-      const openTag = c.open_to_work
-        ? `<span class="tag good">Open to work</span>` : '';
-      const noticeTag = c.notice_days <= 30
-        ? `<span class="tag good">Quick joiner</span>`
-        : c.notice_days > 90
-        ? `<span class="tag warn">${c.notice_days}d notice</span>` : '';
+      const skillTags = c.retrieval_skills.slice(0,6).map(s =>
+        `<span class="tag tag-skill">${s}</span>`).join('');
+      const openTag = c.open_to_work ?
+        `<span class="tag tag-good">open to work</span>` : '';
+      const noticeTag = c.notice_days <= 30 ?
+        `<span class="tag tag-good">quick joiner</span>` :
+        c.notice_days > 90 ?
+        `<span class="tag tag-warn">${c.notice_days}d notice</span>` : '';
 
       html += `
-        <div class="candidate-card" id="card-${i}" onclick="toggleCard(${i})">
-          <div class="card-header">
-            <div class="rank-badge ${badgeClass}">#${c.rank}</div>
-            <div class="card-info">
+        <div class="cand-card" id="card-${i}" onclick="toggleCard(${i}, event)">
+          <div class="card-top">
+            <div class="rank-num ${rankClass}">#${c.rank}</div>
+            <div class="card-main">
               <div class="card-title">${c.title} · ${c.company}</div>
-              <div class="card-sub">${c.industry} · ${c.years_of_experience.toFixed(1)} yrs · ${c.country}</div>
+              <div class="card-meta">
+                <span class="card-meta-text">${c.industry}</span>
+                <div class="dot-sep"></div>
+                <span class="card-meta-text">${c.years_of_experience.toFixed(1)} yrs</span>
+                <div class="dot-sep"></div>
+                <span class="card-meta-text">${c.country}</span>
+              </div>
             </div>
-            <div class="score-pill">${c.score.toFixed(4)}</div>
+            <div class="card-right">
+              <div class="score-display">${c.score.toFixed(4)}</div>
+              <div class="score-bar-track">
+                <div class="score-bar-fill" style="width:${barW}%"></div>
+              </div>
+            </div>
           </div>
-          <div class="score-bar-wrap">
-            <div class="score-bar-fill" style="width:${barWidth}%"></div>
-          </div>
-          <div class="tags">
+          <div class="tag-row">
             ${skillTags}${openTag}${noticeTag}
           </div>
-          <div class="card-details" id="details-${i}">
-            <div class="detail-grid">
-              <div class="detail-box">
-                <div class="detail-val">${c.years_of_experience.toFixed(1)}</div>
-                <div class="detail-label">Years Exp</div>
+          <div class="card-expand" id="expand-${i}">
+            <div class="expand-grid">
+              <div class="expand-box">
+                <div class="expand-val">${c.years_of_experience.toFixed(1)}</div>
+                <div class="expand-label">Years Exp</div>
               </div>
-              <div class="detail-box">
-                <div class="detail-val">${c.notice_days}</div>
-                <div class="detail-label">Notice Days</div>
+              <div class="expand-box">
+                <div class="expand-val">${c.notice_days}</div>
+                <div class="expand-label">Notice Days</div>
               </div>
-              <div class="detail-box">
-                <div class="detail-val">${c.open_to_work ? '✅' : '❌'}</div>
-                <div class="detail-label">Open to Work</div>
+              <div class="expand-box">
+                <div class="expand-val">${c.open_to_work ? '✓' : '✗'}</div>
+                <div class="expand-label">Open to Work</div>
               </div>
-              <div class="detail-box">
-                <div class="detail-val">${c.retrieval_skills.length}</div>
-                <div class="detail-label">Retrieval Skills</div>
+              <div class="expand-box">
+                <div class="expand-val">${c.retrieval_skills.length}</div>
+                <div class="expand-label">AI Skills Found</div>
               </div>
             </div>
-            <div class="reasoning-box">${c.reasoning}</div>
+            <div class="breakdown">
+              <div class="breakdown-row">
+                <div class="breakdown-label">Semantic Match</div>
+                <div class="breakdown-track">
+                  <div class="breakdown-fill bf-semantic" style="width:${(c.score*100).toFixed(0)}%"></div>
+                </div>
+                <div class="breakdown-num">${c.score.toFixed(3)}</div>
+              </div>
+              <div class="breakdown-row">
+                <div class="breakdown-label">Experience Fit</div>
+                <div class="breakdown-track">
+                  <div class="breakdown-fill bf-exp" style="width:${Math.min(100,c.years_of_experience/10*100).toFixed(0)}%"></div>
+                </div>
+                <div class="breakdown-num">${c.years_of_experience.toFixed(1)}y</div>
+              </div>
+              <div class="breakdown-row">
+                <div class="breakdown-label">Location Score</div>
+                <div class="breakdown-track">
+                  <div class="breakdown-fill bf-loc" style="width:${c.country==='India'?'100':'60'}%"></div>
+                </div>
+                <div class="breakdown-num">${c.country}</div>
+              </div>
+            </div>
+            <div class="reasoning-label">AI Reasoning</div>
+            <div class="reasoning">${c.reasoning}</div>
           </div>
         </div>`;
     });
 
+    html += '</div>';
     document.getElementById('resultsArea').innerHTML = html;
   }
 
-  function toggleCard(i) {
-    const details = document.getElementById(`details-${i}`);
+  function toggleCard(i, e) {
+    const expand = document.getElementById(`expand-${i}`);
     const card = document.getElementById(`card-${i}`);
-    details.classList.toggle('show');
-    card.classList.toggle('expanded');
+    expand.classList.toggle('show');
+    card.classList.toggle('open');
   }
 </script>
 </body>
