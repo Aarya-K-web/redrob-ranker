@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
+from features import get_flags
 
 # --- App setup ---
 app = FastAPI(
@@ -15,7 +16,6 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Allow frontend to talk to this API from any origin
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -29,7 +29,6 @@ model = SentenceTransformer("all-MiniLM-L6-v2")
 candidate_embeddings = np.load("candidate_embeddings.npy")
 features_df = pd.read_csv("candidate_features.csv")
 
-# Load all candidate profiles into memory for reasoning
 print("Loading candidate profiles...")
 all_profiles = {}
 with open("candidates.jsonl", "r", encoding="utf-8") as f:
@@ -61,6 +60,9 @@ class CandidateResult(BaseModel):
     open_to_work: bool
     retrieval_skills: list[str]
     reasoning: str
+    green_flags: list[str]
+    yellow_flags: list[str]
+    red_flags: list[str]
 
 class RankResponse(BaseModel):
     total_searched: int
@@ -201,6 +203,7 @@ def rank_candidates(request: RankRequest):
         sig = candidate["redrob_signals"]
         retrieval = get_retrieval_skills(candidate)
         reasoning = generate_reasoning(row, candidate)
+        green, yellow, red = get_flags(candidate)
 
         results.append(CandidateResult(
             rank=int(row["rank"]),
@@ -214,7 +217,10 @@ def rank_candidates(request: RankRequest):
             notice_days=int(sig["notice_period_days"]),
             open_to_work=bool(sig["open_to_work_flag"]),
             retrieval_skills=retrieval[:8],
-            reasoning=reasoning
+            reasoning=reasoning,
+            green_flags=green,
+            yellow_flags=yellow,
+            red_flags=red
         ))
 
     return RankResponse(
