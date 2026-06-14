@@ -1,6 +1,8 @@
+import os
+import json
 import numpy as np
 import pandas as pd
-import json
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -16,9 +18,19 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# --- CORS Middleware Update ---
+# Replaced wildcard with explicit origins to ensure absolute compatibility 
+# between your Vercel frontend and Hugging Face backend.
+origins = [
+    "https://redrob-ranker.vercel.app",  # Your production Vercel frontend
+    "http://localhost:3000",             # Common frontend local port (React/Next.js)
+    "http://localhost:5173",             # Common frontend local port (Vite)
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -157,7 +169,7 @@ def rank_candidates(request: RankRequest):
 
     # 3. Normalize
     min_s, max_s = df["semantic_score"].min(), df["semantic_score"].max()
-    df["semantic_norm"] = (df["semantic_score"] - min_s) / (max_s - min_s)
+    df["semantic_norm"] = (df["semantic_score"] - min_s) / (max_s - min_s) if max_s != min_s else 0.0
 
     # 4. Compute final score
     total_w = (
@@ -228,3 +240,10 @@ def rank_candidates(request: RankRequest):
         honeypots_removed=honeypots_removed,
         results=results
     )
+
+# --- Direct Execution Setup for Hugging Face ---
+if __name__ == "__main__":
+    # Hugging Face sets the 'PORT' environment variable automatically to 7860.
+    # If fallback to 8000 occurs, it's safe for your local environment run.
+    port = int(os.environ.get("PORT", 7860))
+    uvicorn.run(app, host="0.0.0.0", port=port)
