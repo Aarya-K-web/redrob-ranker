@@ -846,7 +846,7 @@
 </div>
 
 <script>
-  const API = 'https://aryaksirsagar-aiml-418-redrob-ranker.hf.space';
+  const API = 'http://localhost:8000';
   let selectedTopN = 20;
 
   function setTopN(n, btn) {
@@ -1017,23 +1017,7 @@
                 <div class="breakdown-num">${c.country}</div>
               </div>
             </div>
-            ${c.green_flags.length ? `
-  <div class="r-label" style="color:#10b981;margin-bottom:6px">✅ Green Flags</div>
-  <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">
-    ${c.green_flags.map(f=>`<span class="tag tag-open">${f}</span>`).join('')}
-  </div>` : ''}
-${c.yellow_flags.length ? `
-  <div class="r-label" style="color:#f59e0b;margin-bottom:6px">⚠️ Yellow Flags</div>
-  <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">
-    ${c.yellow_flags.map(f=>`<span class="tag tag-warn">${f}</span>`).join('')}
-  </div>` : ''}
-${c.red_flags.length ? `
-  <div class="r-label" style="color:#f43f5e;margin-bottom:6px">🔴 Red Flags</div>
-  <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">
-    ${c.red_flags.map(f=>`<span class="tag" style="background:rgba(244,63,94,0.08);color:#f43f5e;border:1px solid rgba(244,63,94,0.2)">${f}</span>`).join('')}
-  </div>` : ''}
-<div class="r-label">AI Reasoning</div>
-<div class="reasoning-box">${c.reasoning}</div>
+            <div class="reasoning-label">AI Reasoning</div>
             <div class="reasoning">${c.reasoning}</div>
           </div>
         </div>`;
